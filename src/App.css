@@ -130,7 +130,11 @@
 .chat {
   width: 100% !important;
 }
-
+.delivered-indicator {
+  font-size: 10px;
+  color: #8f8f8f;
+  margin-left: 30px;
+}
 .header-chat {
   background-color: #fff;
   height: 50px;
