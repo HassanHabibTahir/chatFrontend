@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import {
   getFriends,
   getMessage,
+  markMessageAsSeen,
   messageSend,
 } from "../../store/actions/messengerAction";
 import moment from "moment";
@@ -176,6 +177,9 @@ const Chat = () => {
     }
   }, [soketMessage]);
 
+  const markMessageSeen = (messageId) => {
+    dispatch(markMessageAsSeen(messageId));
+  };
   console.log(typingMessage, "soketMessage--->");
   return (
     <div>
