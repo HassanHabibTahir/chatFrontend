@@ -56,6 +56,7 @@ export const messengerReducer = (state = messengerState, action) => {
     }
 
     if (type === UPDATE_FRIEND_MESSAGE) {
+        console.log(state?.friends, "state?.friends")
         const index = state?.friends?.findIndex(f => f._id === payload.msgInfo.receiverId
             || f._id === payload.msgInfo.senderId);
         state.friends[index].msgInfo = payload.msgInfo;

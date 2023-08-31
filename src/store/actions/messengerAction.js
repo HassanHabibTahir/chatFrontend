@@ -22,7 +22,7 @@ export const getFriends = (id) => async (dispatch) => {
             }
         })
         if (response) {
-
+            console.log(response, "response===>")
             dispatch({
                 type: FRIEND_GET_SUCCESS,
                 payload: {
@@ -39,7 +39,7 @@ export const getFriends = (id) => async (dispatch) => {
 
 export const messageSend = (data) => async (dispatch) => {
     try {
-        console.log(data, "data--->");
+
         let token = await getToken();
         const response = await axios.post(`${url}/api/message`, data, {
             headers: {

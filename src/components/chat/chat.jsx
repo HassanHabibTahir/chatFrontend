@@ -24,18 +24,27 @@ const Chat = () => {
     const Navigate = useNavigate();
     const socket = useRef();
 
+
+
+
+
     useEffect(() => {
         socket.current = io.connect(url, { transports: ["websocket"] });
         socket.current.on('getMessage', (data) => {
+            console.log(data, "get---->Messages ")
             setSocketMessage(data);
         })
-
         socket.current.on('typingMessageGet', (data) => {
             setTypingMessage(data);
+        });
 
-        })
-
-    }, []);
+        socket.current.on('activeUsers', users => {
+            if (myInfo) {
+                const filterUser = users.filter(u => u.userId !== myInfo.data._id);
+                setActiveUser(filterUser)
+            }
+        });
+    }, [myInfo]);
 
     const logoutHandler = () => {
         dispatch(userLogout())
@@ -113,18 +122,12 @@ const Chat = () => {
         }
     }, [friends.success]);
 
-
-
-
-
-
     useEffect(() => {
         if (myInfo)
             socket.current.emit('addUser', myInfo.data._id, myInfo.data)
     }, [myInfo]);
     useEffect(() => {
-        socket.current.on('getUser', (users) => {
-
+        socket.current.on('getUsers', (users) => {
             if (myInfo) {
                 const filterUser = users.filter(u => u.userId !== myInfo.data._id);
                 setActiveUser(filterUser)
@@ -146,7 +149,6 @@ const Chat = () => {
 
     useEffect(() => {
         if (mesageSendSuccess) {
-            console.log(mesageSendSuccess, "messageSendsSUCESS--->", message[message.length - 1])
             socket.current.emit('sendMessage', message[message.length - 1]);
             dispatch({
                 type: 'UPDATE_FRIEND_MESSAGE',
@@ -163,9 +165,8 @@ const Chat = () => {
 
 
     useEffect(() => {
-        // && soketMessage.receiverId !== currentUser._id && soketMessage.receiverId === myInfo.data._id
         if (soketMessage) {
-            console.log(soketMessage, "soketMessage--hi hassan habib tahir>")
+
             dispatch({
                 type: 'SOCKET_MESSAGE',
                 payload: {
