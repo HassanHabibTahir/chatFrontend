@@ -1,5 +1,5 @@
 // import React from 'react'
-
+import { v4 as uuidv4 } from "uuid";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUser, userLogout } from "../../store/actions/authAction";
@@ -7,15 +7,19 @@ import { useNavigate } from "react-router-dom";
 import {
   getFriends,
   getMessage,
-  markMessageAsSeen,
   messageSend,
 } from "../../store/actions/messengerAction";
 import moment from "moment";
 import io from "socket.io-client";
 import { url } from "../../config";
+// uuid
+function generateRandomHexString(length) {
+  const uid = uuidv4();
+  return uid.replace(/-/g, "").substring(0, length);
+}
 const Chat = () => {
   const { error, successMessage, myInfo } = useSelector((state) => state.auth);
-  const { friends, message, mesageSendSuccess } = useSelector(
+  const { friends, lastMessages, message, mesageSendSuccess } = useSelector(
     (state) => state.messenger
   );
   const [room, setRoom] = useState("");
@@ -26,22 +30,26 @@ const Chat = () => {
   const [soketMessage, setSocketMessage] = useState("");
   const [activeUser, setActiveUser] = useState({});
   const [typingMessage, setTypingMessage] = useState("");
-  const [deliveredMessages, setDeliveredMessages] = useState([]);
   const dispatch = useDispatch();
   const Navigate = useNavigate();
   const socket = useRef();
-
+  console.log("lastMessages", lastMessages);
   useEffect(() => {
     socket.current = io.connect(url, { transports: ["websocket"] });
     socket.current.on("getMessage", (data) => {
+      console.log(data, "get---->Messages ");
       setSocketMessage(data);
-      console.log("soketMessage---------------------", data);
     });
-
     socket.current.on("typingMessageGet", (data) => {
       setTypingMessage(data);
     });
-  }, []);
+    socket.current.on("activeUsers", (users) => {
+      if (myInfo) {
+        const filterUser = users.filter((u) => u.userId !== myInfo.data._id);
+        setActiveUser(filterUser);
+      }
+    });
+  }, [myInfo]);
 
   const logoutHandler = () => {
     dispatch(userLogout());
@@ -92,11 +100,12 @@ const Chat = () => {
   const sendMessage = (e) => {
     e.preventDefault();
     const data = {
+      _id: generateRandomHexString(24),
       senderName: myInfo.data.firstName,
       receiverId: currentUser._id,
       message: newMessage ? newMessage : "❤",
     };
-
+    console.log("data.........>>>>>>", data);
     dispatch(messageSend(data));
     socket.current.emit("typingMessage", {
       senderId: myInfo.data._id,
@@ -116,7 +125,7 @@ const Chat = () => {
     if (myInfo) socket.current.emit("addUser", myInfo.data._id, myInfo.data);
   }, [myInfo]);
   useEffect(() => {
-    socket.current.on("getUser", (users) => {
+    socket.current.on("getUsers", (users) => {
       if (myInfo) {
         const filterUser = users.filter((u) => u.userId !== myInfo.data._id);
         setActiveUser(filterUser);
@@ -135,11 +144,6 @@ const Chat = () => {
 
   useEffect(() => {
     if (mesageSendSuccess) {
-      console.log(
-        mesageSendSuccess,
-        "messageSendsSUCESS--->",
-        message[message.length - 1]
-      );
       socket.current.emit("sendMessage", message[message.length - 1]);
       dispatch({
         type: "UPDATE_FRIEND_MESSAGE",
@@ -154,9 +158,7 @@ const Chat = () => {
   }, [mesageSendSuccess, dispatch, message]);
 
   useEffect(() => {
-    // && soketMessage.receiverId !== currentUser._id && soketMessage.receiverId === myInfo.data._id
     if (soketMessage) {
-      console.log(soketMessage, "soketMessage--hi hassan habib tahir>");
       dispatch({
         type: "SOCKET_MESSAGE",
         payload: {
@@ -170,16 +172,9 @@ const Chat = () => {
           status: "delivared",
         },
       });
-      setDeliveredMessages((prevDeliveredMessages) => [
-        ...prevDeliveredMessages,
-        soketMessage._id, // Assuming soketMessage has a unique ID
-      ]);
     }
   }, [soketMessage]);
 
-  const markMessageSeen = (messageId) => {
-    dispatch(markMessageAsSeen(messageId));
-  };
   console.log(typingMessage, "soketMessage--->");
   return (
     <div>
@@ -215,6 +210,7 @@ const Chat = () => {
                 </div>
                 <div className="desc-contact">
                   <p className="name">{item?.firstName}</p>
+
                   <p className="message">You can't see me</p>
                 </div>
                 <div className="timer">
@@ -286,11 +282,6 @@ const Chat = () => {
                         <div className="message text-only">
                           <div className="response">
                             <p className="text"> {msg.message.text}</p>
-                            {deliveredMessages.includes(msg._id) && (
-                              <span className="delivered-indicator">
-                                Delivered
-                              </span>
-                            )}
                           </div>
                         </div>
                       ) : (
