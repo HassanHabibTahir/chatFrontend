@@ -20,12 +20,13 @@ export const getToken = async () => {
 export const getFriends = (id) => async (dispatch) => {
   try {
     let token = await getToken();
-    const response = await axios.get(`${url}/api/user/allUser`, {
+    const response = await axios.get(`${url}/api/user/chatAllUsers`, {
       headers: {
         authorization: token,
       },
     });
     if (response) {
+      console.log(response, "response===>");
       dispatch({
         type: FRIEND_GET_SUCCESS,
         payload: {
@@ -40,7 +41,6 @@ export const getFriends = (id) => async (dispatch) => {
 
 export const messageSend = (data) => async (dispatch) => {
   try {
-    console.log(data, "data--->");
     let token = await getToken();
     const response = await axios.post(`${url}/api/message`, data, {
       headers: {
